@@ -1,25 +1,19 @@
 package com.simplelivetv.app
 
-import android.content.pm.ActivityInfo
 import android.os.Bundle
-import android.view.View
 import android.view.WindowManager
 import android.widget.ImageButton
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.view.WindowCompat
-import androidx.core.view.WindowInsetsCompat
-import androidx.core.view.WindowInsetsControllerCompat
-import androidx.media3.common.C
-import androidx.media3.common.MediaItem
-import androidx.media3.common.PlaybackException
-import androidx.media3.common.Player
-import androidx.media3.common.TrackSelectionParameters
-import androidx.media3.common.Tracks
-import androidx.media3.exoplayer.ExoPlayer
-import androidx.media3.exoplayer.trackselection.DefaultTrackSelector
-import androidx.media3.ui.PlayerView
+import com.google.android.exoplayer2.C
+import com.google.android.exoplayer2.ExoPlayer
+import com.google.android.exoplayer2.MediaItem
+import com.google.android.exoplayer2.PlaybackException
+import com.google.android.exoplayer2.Player
+import com.google.android.exoplayer2.Tracks
+import com.google.android.exoplayer2.trackselection.DefaultTrackSelector
+import com.google.android.exoplayer2.ui.PlayerView
 
 class PlayerActivity : AppCompatActivity() {
 
@@ -27,19 +21,10 @@ class PlayerActivity : AppCompatActivity() {
     private lateinit var tvTitle: TextView
     private lateinit var btnBack: ImageButton
     private var exoPlayer: ExoPlayer? = null
-    private var trackSelector: DefaultTrackSelector? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
-        // 全屏
-        WindowCompat.setDecorFitsSystemWindows(window, false)
-        WindowInsetsControllerCompat(window, window.decorView).let { controller ->
-            controller.hide(WindowInsetsCompat.Type.systemBars())
-            controller.systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
-        }
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
-
         setContentView(R.layout.activity_player)
 
         playerView = findViewById(R.id.playerView)
@@ -61,20 +46,15 @@ class PlayerActivity : AppCompatActivity() {
     }
 
     private fun initPlayer(url: String) {
-        val selector = DefaultTrackSelector(this).apply {
-            // 限制最大分辨率为 540p
+        val trackSelector = DefaultTrackSelector(this).apply {
             setParameters(
                 buildUponParameters()
-                    .setMaxVideoSizeSd() // SD = 720x480，更严格的话可以手动设
-                    .setMaxVideoSize(960, 540) // 最大 540p
+                    .setMaxVideoSize(960, 540)
             )
         }
-        trackSelector = selector
 
         val player = ExoPlayer.Builder(this)
-            .setTrackSelector(selector)
-            .setSeekForwardIncrementMs(10000)
-            .setSeekBackIncrementMs(10000)
+            .setTrackSelector(trackSelector)
             .build()
             .also { exoPlayer = it }
 
@@ -95,10 +75,7 @@ class PlayerActivity : AppCompatActivity() {
         player.addListener(object : Player.Listener {
             override fun onPlaybackStateChanged(state: Int) {
                 when (state) {
-                    Player.STATE_READY -> {}
                     Player.STATE_ENDED -> player.seekTo(0)
-                    Player.STATE_BUFFERING -> {}
-                    Player.STATE_IDLE -> {}
                 }
             }
 
@@ -107,8 +84,6 @@ class PlayerActivity : AppCompatActivity() {
             }
 
             override fun onTracksChanged(tracks: Tracks) {
-                super.onTracksChanged(tracks)
-                // 打印当前选中轨道信息（调试用）
                 for (group in tracks.groups) {
                     if (group.type == C.TRACK_TYPE_VIDEO) {
                         for (i in 0 until group.length) {
@@ -138,15 +113,5 @@ class PlayerActivity : AppCompatActivity() {
         super.onDestroy()
         exoPlayer?.release()
         exoPlayer = null
-        trackSelector = null
-    }
-
-    override fun onWindowFocusChanged(hasFocus: Boolean) {
-        super.onWindowFocusChanged(hasFocus)
-        if (hasFocus) {
-            WindowInsetsControllerCompat(window, window.decorView).hide(
-                WindowInsetsCompat.Type.systemBars()
-            )
-        }
     }
 }
