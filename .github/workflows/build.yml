@@ -18,10 +18,10 @@ jobs:
       - name: Setup Gradle
         uses: gradle/gradle-build-action@v3
         with:
-          gradle-version: '7.5.1'
+          gradle-version: '7.6'
 
       - name: Build Debug APK
-        run: gradle assembleDebug --no-daemon
+        run: gradle assembleDebug --no-daemon --stacktrace
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
